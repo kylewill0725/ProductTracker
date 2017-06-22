@@ -24,7 +24,7 @@ let sim = SubscriberInstanceManager.INSTANCE;
 //Load Subscribers
 if (fs.exists(SUBSCRIBERS_LOC))
     sim.rebuild(SUBSCRIBERS_LOC);
-let subscribers = SubscriberInstanceManager.INSTANCE.subscribers;
+let subscribers = sim.subscribers;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -42,12 +42,9 @@ app.use('/', index);
 app.use('/users', users);
 app.use('/subscribe', function (req, res) {
         req.query.topics.forEach(function (topic) {
-            if (subscribers.filter((subscriber) => subscriber.sub == req.body.subs)) {
-                sim.add(new Subscriber(req.body.sub, topic));
-            }
+            sim.add(new Subscriber(req.body.sub, topic));
         });
-        console.dir(req.body.subs);
-        res.end("Yay");
+        res.end("Success");
     }
 );
 app.use('/unsubscribe', function (req, res) {
@@ -57,7 +54,7 @@ app.use('/unsubscribe', function (req, res) {
                 sim.removeTopic(subscribers[i], topic);
             }
         });
-        res.end("Yay");
+        res.end("Success");
     }
 );
 
@@ -174,9 +171,9 @@ function sendPushNotification(topic, payload) {
             privateKey: keys.vapidPrivateKey
         }
     };
-    for (let sub in subscribers[topic]) {
+    for (let sub of subscribers.filter(sub => sub.topics.includes(topic))) {
         wp.sendNotification(
-            subscribers[topic][sub],
+            sub.sub,
             JSON.stringify(payload),
             options
         ).catch((err) => {
