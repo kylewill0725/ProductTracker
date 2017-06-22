@@ -26,6 +26,7 @@ class SubscriberTest {
         for (let i = 0; i < 10; i++) {
             this.subs.push(new Subscriber(String(i)));
         }
+        SubscriberInstanceManager.INSTANCE.setLoc(save_loc);
     }
 
     @test("Test adding subscriber to subscriber list")

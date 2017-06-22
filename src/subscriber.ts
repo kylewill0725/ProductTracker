@@ -2,9 +2,9 @@
  * Created by kylewill0725 on 6/20/2017.
  */
 import * as fs from 'fs';
-import * as _ from 'underscore';
 
 export class SubscriberInstanceManager {
+    private _location: string;
     private static _instance: SubscriberInstanceManager;
     static get INSTANCE(): SubscriberInstanceManager {
         if (typeof SubscriberInstanceManager._instance === 'object')
@@ -32,6 +32,8 @@ export class SubscriberInstanceManager {
         } else {
             this._subscribers.push(subscriber);
         }
+
+        this.save(this._location);
         return true;
     }
 
@@ -39,6 +41,7 @@ export class SubscriberInstanceManager {
         if (!this._subscribers.some((sub, i, array) =>  sub.isEqual( subscriber )))
             return false;
         this._subscribers = this._subscribers.filter(val => !val.isEqual(subscriber));
+        this.save(this._location);
         return true;
     }
 
@@ -54,12 +57,13 @@ export class SubscriberInstanceManager {
             } else {
                 this.remove(this.subscribers[i]);
             }
+            this.save(this._location);
             return true;
         }
         return false;
     }
 
-    async save(location: string) {
+    save(location: string) {
         try {
             fs.writeFileSync(location, JSON.stringify(this.subscribers));
         } catch (err) {
@@ -75,6 +79,10 @@ export class SubscriberInstanceManager {
         let err, data = fs.readFileSync(location, 'utf8');
         if (err) throw err;
         this._subscribers = JSON.parse(data);
+    }
+
+    setLoc(location: string) {
+        this._location = location;
     }
 }
 

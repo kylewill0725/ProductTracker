@@ -21,6 +21,8 @@ const SUBSCRIBERS_LOC = './subscribers.json';
 
 //region Setup
 let sim = SubscriberInstanceManager.INSTANCE;
+sim.setLoc(SUBSCRIBERS_LOC);
+
 //Load Subscribers
 if (fs.exists(SUBSCRIBERS_LOC))
     sim.rebuild(SUBSCRIBERS_LOC);
