@@ -22,9 +22,16 @@ export class SubscriberInstanceManager {
     }
 
     add(subscriber: Subscriber): boolean {
-        let result = this.subscribers.filter(val => subscriber.isEqual(val) );
-        if (result.length > 0) return false;
-        this._subscribers.push(subscriber);
+        let subIndex = this.subscribers.findIndex(val => subscriber.sub == val.sub);
+        if (subIndex >= 0) {
+            let newTopics = this.subscribers[subIndex].topics.filter(val => !subscriber.topics.includes(val));
+            if (newTopics.length == 0) return false;
+            newTopics.forEach(topic => {
+                this._subscribers[subIndex].topics.push(topic);
+            });
+        } else {
+            this._subscribers.push(subscriber);
+        }
         return true;
     }
 
