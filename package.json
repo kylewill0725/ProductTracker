@@ -1,0 +1,33 @@
+{
+  "name": "producttracker",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node ./dest/bin/www.js"
+  },
+  "author": "qwyll",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "chrome-remote-interface": "^0.23.2",
+    "cookie-parser": "^1.4.3",
+    "errorhandler": "^1.5.0",
+    "express": "^4.15.3",
+    "greenlock-express": "^2.0.11",
+    "lighthouse": "^2.1.0",
+    "morgan": "^1.8.2",
+    "request": "^2.81.0",
+    "serve-favicon": "^2.4.3",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.0",
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.1",
+    "@types/underscore": "^1.8.1",
+    "chai": "^4.0.2",
+    "mocha": "^3.4.2",
+    "mocha-typescript": "^1.1.5",
+    "package.json": "^2.0.1",
+    "typescript": "^2.3.4"
+  }
+}

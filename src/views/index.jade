@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  button(class='subscribe') Subscribe
+
+  script.
+    function testSend() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.open('POST', '/subscribe?topics[]=product&topics[]=warframe', true);
+        var blob = new Blob(['{"subs": ' + JSON.stringify({"endpoint":"https://fcm.googleapis.com/fcm/send/dIYSxG3XXaw:APA91bF6E8WIPoirf7Uc6TymT7wf4FRdK0ny852z31EmOBwt6R_AQUSKVh7zVExTbsd831f55wAwBDWtTdou7eysKID7RbPkRNkCXMLFfR7_ZcWDNzvudDPyo4hdaseDW7K_x-koh-ZO","expirationTime":null,"keys":{"p256dh":"BN2nwbQpA4zy-HgqGpWmN1YXuBHlrAJU_yeQKh8BlA-UJAbSahLTRsd31yDT6Eao4q4B5y4elas7N2f97MbHY4g=","auth":"MwjqatJwBf3qRrkLLdJCxw=="}}) + '}'], {type: 'application/json'});
+        xhttp.send(blob);
+    }
+
+  button(onclick='testSend()') Test Send
+
+  section(class = 'endpoint' style = 'display:none;width:80%')
+    h3 Subscription:
+    code(class = 'js-sub')
+    h3 Endpoint:
+    code(class = 'js-end')
+
+
+  script(src='/javascripts/main.js')
