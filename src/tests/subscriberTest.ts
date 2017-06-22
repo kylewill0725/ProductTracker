@@ -32,6 +32,8 @@ class SubscriberTest {
     public addSubscriber() {
         SubscriberInstanceManager.INSTANCE.add(this.sub).should.eq(true);
         SubscriberInstanceManager.INSTANCE.add(this.sub).should.eq(false);
+        SubscriberInstanceManager.INSTANCE.add(new Subscriber("Test", ["products", "rawr", "beethoven"])).should.eq(true);
+        SubscriberInstanceManager.INSTANCE.add(new Subscriber("Test", ["products", "rawr"])).should.eq(false);
         SubscriberInstanceManager.INSTANCE.clear();
     }
 

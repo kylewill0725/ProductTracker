@@ -24,7 +24,7 @@ export class SubscriberInstanceManager {
     add(subscriber: Subscriber): boolean {
         let subIndex = this.subscribers.findIndex(val => subscriber.sub == val.sub);
         if (subIndex >= 0) {
-            let newTopics = this.subscribers[subIndex].topics.filter(val => !subscriber.topics.includes(val));
+            let newTopics = this.subscribers[subIndex].topics.concat(subscriber.topics).filter(val => !this.subscribers[subIndex].topics.includes(val));
             if (newTopics.length == 0) return false;
             newTopics.forEach(topic => {
                 this._subscribers[subIndex].topics.push(topic);
@@ -43,16 +43,7 @@ export class SubscriberInstanceManager {
     }
 
     removeTopic(subscriber: Subscriber, ...topics: string[]): boolean {
-        let i = this.subscribers.findIndex((val, j, ar) => subscriber.sub == val.sub);
-        if (i >= 0) {
-            if (this.subscribers[i].topics.length > 1) {
-                this._subscribers[i].topics = this.subscribers[i].topics.filter(val => topics.indexOf(val) == -1);
-            } else {
-                this.remove(this.subscribers[i]);
-            }
-            return true;
-        }
-        return false;
+        return this.removeDesc(subscriber.sub, topics);
     }
 
     removeDesc(subscriber: string, topics: string[]): boolean {
