@@ -19,6 +19,8 @@
 (function() {
     'use strict';
 
+    let url;
+
     self.addEventListener('notificationclose', function(e) {
         let notification = e.notification;
         let primaryKey = notification.data.primaryKey;
@@ -40,11 +42,11 @@
                         return c.visibilityState === 'visible';
                     });
                     if (client !== undefined) {
-                        client.navigate('samples/page' + primaryKey + '.html');
+                        client.navigate(url);
                         client.focus();
                     } else {
                         // there are no visible windows. Open one.
-                        clients.openWindow('samples/page' + primaryKey + '.html');
+                        clients.openWindow(url);
                         notification.close();
                     }
                 })
@@ -60,9 +62,9 @@
 
     self.addEventListener('push', function(e) {
         let body;
-
         if (e.data) {
-            body = e.data.text();
+            body = JSON.parse(e.data.text()).title;
+            url = JSON.parse(e.data.text()).url;
         } else {
             body = 'Default body';
         }
@@ -71,8 +73,6 @@
             body: body,
             icon: '/images/notification-flat.png',
             vibrate: [100, 50, 100],
-            id: 'test',
-            tag: 'producttracker',
             data: {
                 dateOfArrival: Date.now(),
                 primaryKey: 1
@@ -87,13 +87,13 @@
         e.waitUntil(
             clients.matchAll().then(function(c) {
                 console.log(c);
-                if (c.length === 0) {
+                // if (c.length === 0) {
                     // Show notification
                     self.registration.showNotification('Push Notification', options);
-                } else {
+                // } else {
                     // Send a message to the page to update the UI
-                    console.log('Application is already open!');
-                }
+                    // console.log('Application is already open!');
+                // }
             })
         );
     });

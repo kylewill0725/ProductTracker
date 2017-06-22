@@ -6,12 +6,14 @@ import * as fs from 'fs';
 export class SubscriberInstanceManager {
     private _location: string;
     private static _instance: SubscriberInstanceManager;
+
     static get INSTANCE(): SubscriberInstanceManager {
         if (typeof SubscriberInstanceManager._instance === 'object')
             return SubscriberInstanceManager._instance;
         SubscriberInstanceManager.setINSTANCE(new SubscriberInstanceManager());
         return SubscriberInstanceManager._instance;
     }
+
     private static setINSTANCE(instance: SubscriberInstanceManager) {
         SubscriberInstanceManager._instance = instance;
     }
@@ -22,7 +24,7 @@ export class SubscriberInstanceManager {
     }
 
     add(subscriber: Subscriber): boolean {
-        let subIndex = this.subscribers.findIndex(val => subscriber.sub == val.sub);
+        let subIndex = this.subscribers.findIndex(val => subscriber.sub.endpoint == val.sub.endpoint);
         if (subIndex >= 0) {
             let newTopics = this.subscribers[subIndex].topics.concat(subscriber.topics).filter(val => !this.subscribers[subIndex].topics.includes(val));
             if (newTopics.length == 0) return false;
@@ -38,7 +40,7 @@ export class SubscriberInstanceManager {
     }
 
     remove(subscriber: Subscriber): boolean {
-        if (!this._subscribers.some((sub, i, array) =>  sub.isEqual( subscriber )))
+        if (!this._subscribers.some((sub, i, array) => sub.isEqual(subscriber)))
             return false;
         this._subscribers = this._subscribers.filter(val => !val.isEqual(subscriber));
         this.save(this._location);
@@ -46,11 +48,11 @@ export class SubscriberInstanceManager {
     }
 
     removeTopic(subscriber: Subscriber, ...topics: string[]): boolean {
-        return this.removeDesc(subscriber.sub, topics);
+        return this.removeDesc(subscriber.sub.endpoint, topics);
     }
 
     removeDesc(subscriber: string, topics: string[]): boolean {
-        let i = this.subscribers.findIndex((val, j, ar) => subscriber == val.sub);
+        let i = this.subscribers.findIndex((val, j, ar) => subscriber == val.sub.endpoint);
         if (i >= 0) {
             if (this.subscribers[i].topics.length > 1) {
                 this._subscribers[i].topics = this.subscribers[i].topics.filter(val => topics.indexOf(val) == -1);
@@ -88,14 +90,32 @@ export class SubscriberInstanceManager {
 
 export class Subscriber {
     topics: string[];
-    sub: string;
+    sub: Subscription;
 
-    constructor (subscription: string, topics:string[] = ["products"]) {
+    constructor(subscription: Subscription = {} as Subscription, topics: string[] = ["product"]) {
+
         this.topics = topics;
         this.sub = subscription;
     }
 
     isEqual(subscriber: Subscriber): boolean {
-        return typeof subscriber !== 'undefined' && this.sub == subscriber.sub && this.topics.length == subscriber.topics.length && this.topics.some(val => subscriber.topics.includes(val));
+        return typeof subscriber !== 'undefined' && this.sub.endpoint == subscriber.sub.endpoint && this.topics.length == subscriber.topics.length && this.topics.some(val => subscriber.topics.includes(val));
+    }
+
+}
+
+export class Subscription {
+    endpoint: string;
+    expirationTime: string;
+    keys = {
+        auth: null,
+        p256hd: null
+    };
+
+    constructor(val: object) {
+        this.endpoint = val['endpoint'];
+        this.expirationTime = val['expirationTime'];
+        this.keys.auth = val['keys']['auth'];
+        this.keys.p256hd = val['keys']['p256hd'];
     }
 }

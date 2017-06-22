@@ -12,21 +12,32 @@ import * as logger from 'morgan'
 import * as cookieParser from 'cookie-parser'
 import * as bodyParser from 'body-parser'
 import {SubscriberInstanceManager, Subscriber} from './subscriber';
+import {Product, Props} from "./product";
 const index = require('./routes/index');
 const users = require('./routes/users');
 const keys = require('./keys');
 
 let app = express();
-const SUBSCRIBERS_LOC = './subscribers.json';
+const SUBSCRIBERS_LOC = 'X:\\Onedrive\\Programming Projects\\ProductTracker\\subscribers.json';
+const PRODUCTS_LOC = './urls.json';
 
 //region Setup
 let sim = SubscriberInstanceManager.INSTANCE;
 sim.setLoc(SUBSCRIBERS_LOC);
 
 //Load Subscribers
-if (fs.exists(SUBSCRIBERS_LOC))
+if (fs.existsSync(SUBSCRIBERS_LOC))
     sim.rebuild(SUBSCRIBERS_LOC);
 let subscribers = sim.subscribers;
+
+//Load Products
+const products: Product[] = [];
+let err, data = fs.readFileSync(PRODUCTS_LOC, 'utf8');
+if (err) throw err;
+for (let val of JSON.parse(data)) {
+    if (val.hasOwnProperty('href') && val['href'].includes('newegg'))
+        products.push(new Product(val['name'], val['href'], onChangeState));
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -44,14 +55,14 @@ app.use('/', index);
 app.use('/users', users);
 app.use('/subscribe', function (req, res) {
         req.query.topics.forEach(function (topic) {
-            sim.add(new Subscriber(req.body.sub, topic));
+            sim.add(new Subscriber(req.body.subs, topic));
         });
         res.end("Success");
     }
 );
 app.use('/unsubscribe', function (req, res) {
         req.query.topics.forEach(function (topic) {
-            let i = subscribers.findIndex((subscriber) => subscriber.sub == req.body.subs);
+            let i = subscribers.findIndex((subscriber) => subscriber.sub.endpoint == req.body.subs.endpoint);
             if (i >= 0) {
                 sim.removeTopic(subscribers[i], topic);
             }
@@ -87,68 +98,32 @@ let protocol = null;
     chrome = await launchChrome(true);
     protocol = await CDP({port: chrome.port});
 })().then(() => {
-    fs.readFile('./urls.json', 'utf8', (err, data) => {
-        if (err) throw err;
-        let urls = JSON.parse(data);
-        let amazon_urls = [];
-        for (let i in urls) {
-            if (urls[i].href.includes("amazon")) {
-                amazon_urls.push(urls[i]);
-            } else if (urls[i].href.includes("newegg")) {
-                setInterval((url) => {
-                    console.log("Checking: " + url.name);
-                    let id = neweggIDExtractor(url.href);
-                    let options = {
-                        url: 'http://www.ows.newegg.com/Products.egg/' + id,
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Mobile Safari/537.36'
-                        }
-                    };
-                    callJSONRequest(options, (err, productInfo) => {
-                        if (err.code == 'ECONNRESET') {
-                            return;
-                        } else if (err) {
-                            throw err;
-                        }
-                        if (productInfo.Basic.Instock && (Number(productInfo.Basic.FinalPrice.replace(/[^0-9\.]+/g,"")) < 350)) {
-                            console.info("In Stock: " + url.name);
-                            fs.appendFileSync('log.txt', new Date() + ' Found: ' + url.name + '\n');
-                            sendPushNotification('product', {
-                                title: 'In Stock: ' + url.name,
-                                url: url.href
-                            });
-                        }
-                    });
+    products.forEach((product, i, arr) => {
+        setInterval((product) => {
+            console.log("Checking: " + product.name);
+            let options = {
+                url: product.apiUrl,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Mobile Safari/537.36'
+                }
+            };
+            callJSONRequest(options, (err, productInfo) => {
+                if (err.code == 'ECONNRESET') {
+                    return;
+                }else if (err.code == 'ETIMEDOUT') {
+                    console.log("No connection.");
+                    return;
+                } else if (err) {
+                    throw err;
+                }
+                if (Number(productInfo.Basic.FinalPrice.match(/[0-9.]+/)[0]) < 300) {
+                    product.inStock = productInfo.Basic.Instock;
+                    product.canAddToCart = productInfo.Basic.CanAddToCart;
+                }
+            });
 
-                }, 5000, urls[i]);
 
-            }
-        }
-        // setInterval(async (aurls) => {
-        //     const {Page, Runtime} = protocol;
-        //     await Promise.all([Page.enable(), Runtime.enable()]);
-        //
-        //     for (let i in aurls) {
-        //         Page.navigate({url: aurls[i].href}).catch((err) => {
-        //             console.log(err);
-        //         });
-        //
-        //         Page.loadEventFired(async () => {
-        //             console.log("Checking: "+aurls[i].name);
-        //             const result = await Runtime.evaluate({expression: "document.body.innerHTML"});
-        //             if (result.result.subtype !== 'null') {
-        //                 console.info("In Stock" + aurls[i].name);
-        //                 fs.appendFileSync('log.txt', new Date() + ' Found: ' + aurls[i].name + '\n');
-        //                 sendPushNotification('product', {
-        //                     title: 'In Stock: ' + aurls[i].name,
-        //                     url: aurls[i].href
-        //                 }).catch((err) => {
-        //                     console.log(err);
-        //                 });
-        //             }
-        //         })
-        //     }
-        // }, 5000, amazon_urls);
+        }, 5000, product);
     });
 });
 //endregion
@@ -160,6 +135,14 @@ async function launchChrome(headless = true) {
             '--disable-gpu',
             headless ? '--headless' : ''
         ]
+    });
+}
+
+function onChangeState(prop: Props, product: Product) {
+    sendPushNotification('product', {
+        title: prop == 0 ? (product.inStock ? 'In Stock: ' : 'Out of Stock: ') + product.name :
+            (product.canAddToCart ? 'Can add to cart: ' : "Can't add to cart: ") + product.name,
+        url: product.url
     });
 }
 
@@ -179,7 +162,7 @@ function sendPushNotification(topic, payload) {
             JSON.stringify(payload),
             options
         ).catch((err) => {
-
+            console.log(err);
         });
     }
 }

@@ -16,7 +16,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-const keys = require('Keys');
 
 let app = (function() {
     'use strict';
@@ -34,30 +33,6 @@ let app = (function() {
     Notification.requestPermission(function(status) {
         console.log('Notification permission status:', status);
     });
-
-    function displayNotification() {
-        if (Notification.permission === 'granted') {
-            navigator.serviceWorker.getRegistration().then(function(reg) {
-                let options = {
-                    body: 'First notification!',
-                    tag: 'id1',
-                    icon: 'images/notification-flat.png',
-                    vibrate: [100, 50, 100],
-                    data: {
-                        dateOfArrival: Date.now(),
-                        primaryKey: 1
-                    },
-                    actions: [
-                        {action: 'explore', title: 'Go to the site',
-                            icon: 'images/checkmark.png'},
-                        {action: 'close', title: 'Close the notification',
-                            icon: 'images/xmark.png'},
-                    ]
-                };
-                reg.showNotification('Hello world!', options);
-            });
-        }
-    }
 
     function initializeUI() {
         pushButton.addEventListener('click', function() {
@@ -86,7 +61,7 @@ let app = (function() {
             });
     }
 
-    let applicationServerPublicKey = keys.vapidPublicKey;
+    let applicationServerPublicKey = window.keys.vapidPublicKey;
 
     function subscribeUser() {
         let applicationServerKey = urlB64ToUint8Array(applicationServerPublicKey);
@@ -199,7 +174,7 @@ let app = (function() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
         console.log('Service Worker and Push is supported');
 
-        navigator.serviceWorker.register('/javascripts/sw.js')
+        navigator.serviceWorker.register('./javascripts/sw.js')
             .then(function(swReg) {
                 console.log('Service Worker is registered', swReg);
 
