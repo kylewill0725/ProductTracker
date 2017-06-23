@@ -2,6 +2,8 @@
  * Created by kylewill0725 on 6/22/2017.
  */
 import * as request from 'request'
+import * as xpath from 'xpath';
+import {DOMParser} from 'xmldom';
 
 export enum Stores {
     NEWEGG,
@@ -21,7 +23,8 @@ export abstract class Product {
     callback: Function;
 
     static create(name: string, url: string, callback: Function): Product {
-        let domain = url.match(/([^.]+).com/)[1].toUpperCase();
+        let domain = URLExtractor(url).match(/([^.]+).(com|net)/)[1].toUpperCase();
+        domain = domain === 'DDNS' ? 'NEWEGG' : domain;
         let type = Stores.get(domain);
 
         switch (type) {
@@ -32,15 +35,10 @@ export abstract class Product {
                 return new SuperBiizProduct(type, name, url, callback);
             }
         }
+        return null;
     }
 
     abstract checkStatus();
-
-    URLExtractor(url) {
-        if (url.match(/^https:\/\/producttracker/) != null) return url;
-        let matches = url.replace(/%2F/g, '/').replace(/%3A/g,':').replace(/%3D/g,'=').replace(/%3F/g, '?').match(/url=([^&]+)/);
-        return matches[1];
-    }
 }
 
 export class NeweggProduct extends Product {
@@ -79,7 +77,7 @@ export class NeweggProduct extends Product {
         this.type = type;
         this.name = name;
         this.id = this.neweggIDExtractor(url);
-        this.url = this.URLExtractor(url);
+        this.url = URLExtractor(url);
         this.apiUrl = this.id !== 'testing' ? this.NEWEGG_API_URL + this.id : this.url;
         this.callback = onChangeCallback;
     }
@@ -137,7 +135,7 @@ export class SuperBiizProduct extends Product {
         super();
         this.type = type;
         this.name = name;
-        this.url = this.URLExtractor(url);
+        this.url = URLExtractor(url);
         this.callback = onChangeCallback;
     }
 
@@ -149,21 +147,20 @@ export class SuperBiizProduct extends Product {
                 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Mobile Safari/537.36'
             }
         };
-        callJSONRequest(options, (err, productInfo) => {
-            if (err.code == 'ECONNRESET') {
-                return;
-            }else if (err.code == 'ETIMEDOUT') {
-                console.log("No connection.");
-                return;
-            } else if (err) {
-                throw err;
-            }
-            if (Number(productInfo.Basic.FinalPrice.match(/[0-9.]+/)[0]) < 300) {
-                this.inStock = productInfo.Basic.Instock;
-                this.canAddToCart = productInfo.Basic.CanAddToCart;
-            }
+        request(options, (err, res, body) => {
+            let dom = new DOMParser({errorHandler: {}}).parseFromString(body);
+            let input: Element = xpath.select('//*[@value="ADD TO CART"]', dom)[0] as Element;
+            if (!input) return;
+            let cls = input.attributes.getNamedItem('class');
+            this.canAddToCart = !(typeof cls !== 'undefined' && cls.value.includes('not_in_stock'));
         });
     }
+}
+
+function URLExtractor(url) {
+    let matches = url.replace(/%2F/g, '/').replace(/%3A/g,':').replace(/%3D/g,'=').replace(/%3F/g, '?').match(/url=([^&]+)/);
+    if (matches == null) return url;
+    return matches[1];
 }
 
 function callJSONRequest(options, onResult) {

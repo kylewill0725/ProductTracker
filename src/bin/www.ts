@@ -47,7 +47,7 @@ function approveDomains(opts, certs, cb) {
 }
 
 // handles acme-challenge and redirects to https
-require('http').createServer(lex.middleware(require('redirect-https')())).listen(2000, function () {
+require('http').createServer(lex.middleware(require('redirect-https')())).listen(2002, function () { //TODO Change back to 2000
     console.log("Listening for ACME http-01 challenges on", this.address());
 });
 
@@ -57,6 +57,6 @@ let app = require('../app');
 
 
 // handles your app
-require('https').createServer(lex.httpsOptions, lex.middleware(app)).listen(2001, function () {
+require('https').createServer(lex.httpsOptions, lex.middleware(app)).listen(2003, function () {
     console.log("Listening for ACME tls-sni-01 challenges and serve app on", this.address());
 });

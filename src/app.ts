@@ -35,8 +35,9 @@ const products: Product[] = [];
 let err, data = fs.readFileSync(PRODUCTS_LOC, 'utf8');
 if (err) throw err;
 for (let val of JSON.parse(data)) {
-    if (val.hasOwnProperty('href') && val['href'].includes('newegg'))
-        products.push(Product.create(val['name'], val['href'], onChangeState));
+    let product = Product.create(val['name'], val['href'], onChangeState);
+    if (product != null)
+        products.push(product);
 }
 
 // view engine setup
@@ -102,11 +103,8 @@ let protocol = null;
     protocol = await CDP({port: chrome.port});
 })().then(() => {
     products.forEach((product, i, arr) => {
-        setInterval((product) => {
+        setInterval((product: Product) => {
             product.checkStatus();
-
-
-
         }, 5000, product);
     });
 });
