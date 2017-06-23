@@ -20,7 +20,7 @@ export class SubscriberInstanceManager {
 
     private _subscribers: Subscriber[] = [];
     get subscribers(): Subscriber[] {
-        return this._subscribers.map(x => Object.assign({}, x));
+        return this._subscribers.map(x => Object.assign(new Subscriber, x));
     }
 
     add(subscriber: Subscriber): boolean {
@@ -80,7 +80,9 @@ export class SubscriberInstanceManager {
     rebuild(location: string) {
         let err, data = fs.readFileSync(location, 'utf8');
         if (err) throw err;
-        this._subscribers = JSON.parse(data);
+        this._subscribers = JSON.parse(data).map(val => {
+            return Object.setPrototypeOf(val, Subscriber.prototype)
+        });
     }
 
     setLoc(location: string) {
@@ -99,7 +101,7 @@ export class Subscriber {
     }
 
     isEqual(subscriber: Subscriber): boolean {
-        return typeof subscriber !== 'undefined' && this.sub.endpoint == subscriber.sub.endpoint && this.topics.length == subscriber.topics.length && this.topics.some(val => subscriber.topics.includes(val));
+        return typeof subscriber !== 'undefined' && this.sub.endpoint == subscriber.sub.endpoint;
     }
 
 }

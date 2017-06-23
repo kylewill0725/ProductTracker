@@ -28,7 +28,6 @@ sim.setLoc(SUBSCRIBERS_LOC);
 //Load Subscribers
 if (fs.existsSync(SUBSCRIBERS_LOC))
     sim.rebuild(SUBSCRIBERS_LOC);
-let subscribers = sim.subscribers;
 
 //Load Products
 const products: Product[] = [];
@@ -66,9 +65,9 @@ app.use('/subscribe', function (req, res) {
 );
 app.use('/unsubscribe', function (req, res) {
         req.query.topics.forEach(function (topic) {
-            let i = subscribers.findIndex((subscriber) => subscriber.sub.endpoint == req.body.subs.endpoint);
+            let i = sim.subscribers.findIndex((subscriber) => subscriber.sub.endpoint == req.body.subs.endpoint);
             if (i >= 0) {
-                sim.removeTopic(subscribers[i], topic);
+                sim.removeTopic(sim.subscribers[i], topic);
             }
         });
         res.end("Success");
@@ -137,7 +136,7 @@ function sendPushNotification(topic, payload) {
             privateKey: keys.vapidPrivateKey
         }
     };
-    for (let sub of subscribers.filter(sub => sub.topics.includes(topic))) {
+    for (let sub of sim.subscribers.filter(sub => sub.topics.includes(topic))) {
         wp.sendNotification(
             sub.sub,
             JSON.stringify(payload),
@@ -145,7 +144,7 @@ function sendPushNotification(topic, payload) {
         ).catch((err) => {
             console.log(err);
             if (err.statusCode == 410 && err.body.includes("NotRegistered"))
-                sim.remove(subscribers.filter(sub => sub.sub.endpoint === err.endpoint)[0]);
+                sim.remove(sim.subscribers.filter(sub => sub.sub.endpoint === err.endpoint)[0] as Subscriber);
         });
     }
 }
