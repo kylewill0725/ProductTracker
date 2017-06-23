@@ -104,7 +104,7 @@ let protocol = null;
     products.forEach((product, i, arr) => {
         setInterval((product: Product) => {
             product.checkStatus();
-        }, 5000, product);
+        }, 10000, product);
     });
 });
 //endregion

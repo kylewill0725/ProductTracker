@@ -90,7 +90,7 @@ export class NeweggProduct extends Product {
     }
 
     checkStatus() {
-        console.log("Checking: " + this.name);
+        // console.log("Checking: " + this.name);
         let options = {
             url: this.apiUrl,
             headers: {
@@ -140,7 +140,7 @@ export class SuperBiizProduct extends Product {
     }
 
     checkStatus() {
-        console.log("Checking: " + this.name);
+        // console.log("Checking: " + this.name);
         let options = {
             url: this.url,
             headers: {

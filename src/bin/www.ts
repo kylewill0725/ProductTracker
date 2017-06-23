@@ -34,7 +34,7 @@ function approveDomains(opts, certs, cb) {
         opts.domains = certs.altnames;
     }
     else {
-        opts.domains = ['producttracker.ddns.net'];
+        opts.domains = ['producttracker.ddns.net', 'producttracker2.ddns.net'];
         opts.email = 'kwill1429@gmail.com';
         opts.agreeTos = true;
     }
