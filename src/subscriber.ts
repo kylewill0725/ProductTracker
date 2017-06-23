@@ -40,7 +40,7 @@ export class SubscriberInstanceManager {
     }
 
     remove(subscriber: Subscriber): boolean {
-        if (!this._subscribers.some((sub, i, array) => sub.isEqual(subscriber)))
+        if (!this.subscribers.some((sub: Subscriber, i, array) => sub.isEqual(subscriber)))
             return false;
         this._subscribers = this._subscribers.filter(val => !val.isEqual(subscriber));
         this.save(this._location);
