@@ -4,6 +4,8 @@
 import * as request from 'request'
 import * as xpath from 'xpath';
 import {DOMParser} from 'xmldom';
+import * as logger from './logger';
+var eol = require('os').EOL;
 
 export enum Stores {
     NEWEGG,
@@ -25,8 +27,13 @@ export abstract class Product {
     static create(name: string, url: string, callback: Function): Product {
         let domain = URLExtractor(url).match(/([^.]+).(com|net)/)[1].toUpperCase();
         domain = domain === 'DDNS' ? 'NEWEGG' : domain;
-        let type = Stores.get(domain);
-
+        let type = null;
+        try {
+            type = Stores.get(domain);
+        } catch (e) {
+            logger.err(e);
+            return;
+        }
         switch (type) {
             case Stores.NEWEGG: {
                 return new NeweggProduct(type, name, url, callback);
@@ -49,6 +56,7 @@ export class NeweggProduct extends Product {
     set canAddToCart(value: boolean) {
         if (value != this._canAddToCart) {
             this._canAddToCart = value;
+            logger.log((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
             this.callback(this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name,
                 this.url);
         }
@@ -61,10 +69,12 @@ export class NeweggProduct extends Product {
     set inStock(value: boolean) {
         if (value != this._inStock) {
             this._inStock = value;
+            logger.log((this.inStock ? 'In stock: ' + this.name : 'Out of stock: ' + this.name));
             this.callback(this.inStock ? 'In stock: ' + this.name : 'Out of stock: ' + this.name,
                 this.url);
         }
     }
+
     readonly NEWEGG_API_URL = 'http://www.ows.newegg.com/Products.egg/';
 
     private _inStock: boolean = false;
@@ -83,7 +93,6 @@ export class NeweggProduct extends Product {
     }
 
 
-
     neweggIDExtractor(url) {
         if (url.match(/^https:\/\/producttracker/) != null) return "testing";
         return url.match(/Item(%3D|=)([^%]*)/)[2];
@@ -97,15 +106,19 @@ export class NeweggProduct extends Product {
                 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Mobile Safari/537.36'
             }
         };
+
         callJSONRequest(options, (err, productInfo) => {
             if (err.code == 'ECONNRESET') {
                 return;
-            }else if (err.code == 'ETIMEDOUT') {
+            } else if (err.code == 'ETIMEDOUT') {
                 console.log("No connection.");
+                logger.err(err);
                 return;
             } else if (err) {
-                throw err;
+                logger.err(err);
+                return;
             }
+            if (productInfo == null) return;
             if (Number(productInfo.Basic.FinalPrice.match(/[0-9.]+/)[0]) < 300) {
                 this.inStock = productInfo.Basic.Instock;
                 this.canAddToCart = productInfo.Basic.CanAddToCart;
@@ -122,6 +135,7 @@ export class SuperBiizProduct extends Product {
     set canAddToCart(value: boolean) {
         if (value != this._canAddToCart) {
             this._canAddToCart = value;
+            logger.log((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
             this.callback(this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name,
                 this.url);
         }
@@ -148,17 +162,21 @@ export class SuperBiizProduct extends Product {
             }
         };
         request(options, (err, res, body) => {
-            let dom = new DOMParser({errorHandler: {}}).parseFromString(body);
-            let input: Element = xpath.select('//*[@value="ADD TO CART"]', dom)[0] as Element;
-            if (!input) return;
-            let cls = input.attributes.getNamedItem('class');
-            this.canAddToCart = !(typeof cls !== 'undefined' && cls.value.includes('not_in_stock'));
+            try {
+                let dom = new DOMParser({errorHandler: {}}).parseFromString(body);
+                let input: Element = xpath.select('//*[@value="ADD TO CART"]', dom)[0] as Element;
+                if (!input) return;
+                let cls = input.attributes.getNamedItem('class');
+                this.canAddToCart = !(typeof cls !== 'undefined' && cls.value.includes('not_in_stock'));
+            } catch (e) {
+                logger.err(e);
+            }
         });
     }
 }
 
 function URLExtractor(url) {
-    let matches = url.replace(/%2F/g, '/').replace(/%3A/g,':').replace(/%3D/g,'=').replace(/%3F/g, '?').match(/url=([^&]+)/);
+    let matches = url.replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/%3D/g, '=').replace(/%3F/g, '?').match(/url=([^&]+)/);
     if (matches == null) return url;
     return matches[1];
 }
@@ -169,7 +187,11 @@ function callJSONRequest(options, onResult) {
             onResult(err, '');
             return;
         }
+        try {
         let json = JSON.parse(body);
         onResult(0, json);
+        } catch (err) {
+            logger.err(err);
+        }
     });
 }
