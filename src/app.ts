@@ -54,10 +54,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', index);
 app.use('/users', users);
+app.use('/test', (req, res) => {
+    sendPushNotification('test', 'test');
+});
 app.use('/subscribe', function (req, res) {
         req.query.topics.forEach(function (topic) {
             sim.add(new Subscriber(req.body.subs, topic));
         });
+        sim.add(new Subscriber(req.body.subs, ['test']));
         res.end("Success");
     }
 );
@@ -92,30 +96,16 @@ app.use(function (err, req, res, next) {
 //endregion
 
 //region Product Monitor
-let chrome = null;
-let protocol = null;
-
-(async function () {
-    chrome = await launchChrome(true);
-    protocol = await CDP({port: chrome.port});
-})().then(() => {
+(() => {
     products.forEach((product, i, arr) => {
         setInterval((product: Product) => {
             product.checkStatus();
         }, 10000, product);
-    });
-});
+    })
+})//();
 //endregion
 
 //region Product Monitor Functions
-async function launchChrome(headless = true) {
-    return await chromeLauncher.launch({
-        chromeFlags: [
-            '--disable-gpu',
-            headless ? '--headless' : ''
-        ]
-    });
-}
 
 function onChangeState(title: string, url: string) {
     sendPushNotification('product', {
@@ -124,7 +114,7 @@ function onChangeState(title: string, url: string) {
     });
 }
 
-function sendPushNotification(topic, payload) {
+function sendPushNotification(topic: string, payload) {
     let wp = require('web-push');
     let options = {
         TTL: 60,
