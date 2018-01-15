@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "node ./dest/bin/www.js"
+    "start": "node ./src/bin/www.js"
   },
   "author": "qwyll",
   "dependencies": {
@@ -33,6 +33,6 @@
     "mocha": "^3.4.2",
     "mocha-typescript": "^1.1.5",
     "package.json": "^2.0.1",
-    "typescript": "^2.3.4"
+    "typescript": "^2.5.1"
   }
 }
