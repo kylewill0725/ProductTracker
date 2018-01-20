@@ -47,7 +47,7 @@ export class SubscriberInstanceManager {
         return true;
     }
 
-    removeTopic(subscriber: Subscriber, ...topics: string[]): boolean {
+    removeTopic(subscriber: Subscriber, topics: string[]): boolean {
         return this.removeDesc(subscriber.sub.endpoint, topics);
     }
 

@@ -3,8 +3,6 @@
  */
 import * as express from 'express'
 import * as request from 'request'
-import * as chromeLauncher from 'lighthouse/chrome-launcher/chrome-launcher'
-import * as CDP from 'chrome-remote-interface'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as favicon from 'serve-favicon'
@@ -55,23 +53,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index);
 app.use('/users', users);
 app.use('/test', (req, res) => {
-    sendPushNotification('test', 'test');
+    sendPushNotification('test', {title: 'test'});
+    res.end("Success");
 });
 app.use('/subscribe', function (req, res) {
-        req.query.topics.forEach(function (topic) {
-            sim.add(new Subscriber(req.body.subs, topic));
-        });
+        sim.add(new Subscriber(req.body.subs, req.query.topics));
         sim.add(new Subscriber(req.body.subs, ['test']));
         res.end("Success");
     }
 );
 app.use('/unsubscribe', function (req, res) {
-        req.query.topics.forEach(function (topic) {
-            let i = sim.subscribers.findIndex((subscriber) => subscriber.sub.endpoint == req.body.subs.endpoint);
-            if (i >= 0) {
-                sim.removeTopic(sim.subscribers[i], topic);
-            }
-        });
+        if (req.body.subs != null) {
+            req.query.topics.forEach(function (topic) {
+                let i = sim.subscribers.findIndex((subscriber: Subscriber) => subscriber.sub.endpoint == JSON.parse(req.body.subs).endpoint);
+                if (i >= 0) {
+                    sim.removeTopic(sim.subscribers[i], topic);
+                }
+            });
+        }
         res.end("Success");
     }
 );
@@ -102,7 +101,7 @@ app.use(function (err, req, res, next) {
             product.checkStatus();
         }, 10000, product);
     })
-})//();
+})();
 //endregion
 
 //region Product Monitor Functions
@@ -118,20 +117,22 @@ function sendPushNotification(topic: string, payload) {
     let wp = require('web-push');
     let options = {
         TTL: 60,
+        gcmAPIKey: keys.gcmKey,
         vapidDetails: {
             subject: 'mailto:kwill1429@gmail.com',
             publicKey: keys.vapidPublicKey,
             privateKey: keys.vapidPrivateKey
         }
     };
+    console.log("Attempting to send message.");
     for (let sub of sim.subscribers.filter(sub => sub.topics.includes(topic))) {
         wp.sendNotification(
             sub.sub,
             JSON.stringify(payload),
             options
-        ).catch((err) => {
+        ).then(() => console.log("Message pushed")).catch((err) => {
             ptlogger.log(err);
-            if (err.statusCode == 410 && err.body.includes("NotRegistered"))
+            if (err.statusCode == 400 || (err.statusCode == 410 && err.body.includes("No such subscription")))
                 sim.remove(sim.subscribers.filter(sub => sub.sub.endpoint === err.endpoint)[0] as Subscriber);
         });
     }

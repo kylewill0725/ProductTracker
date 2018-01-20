@@ -26,7 +26,9 @@ export abstract class Product {
 
     static create(name: string, url: string, callback: Function): Product {
         let domain = URLExtractor(url).match(/([^.]+).(com|net)/)[1].toUpperCase();
-        domain = domain === 'DDNS' ? 'NEWEGG' : domain;
+        if (url.includes('jet.com'))
+            return null;
+        domain = domain === 'VIGLINK' ? 'NEWEGG' : domain;
         let type = null;
         try {
             type = Stores.get(domain);
@@ -119,7 +121,7 @@ export class NeweggProduct extends Product {
                 return;
             }
             if (productInfo == null) return;
-            if (Number(productInfo.Basic.FinalPrice.match(/[0-9.]+/)[0]) < 300) {
+            if (productInfo.Basic.SellerInfo == null) {
                 this.inStock = productInfo.Basic.Instock;
                 this.canAddToCart = productInfo.Basic.CanAddToCart;
             }

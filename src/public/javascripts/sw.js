@@ -71,7 +71,7 @@
 
         let options = {
             body: body,
-            icon: '/images/notification-flat.png',
+            icon: '/pt/images/notification-flat.png',
             vibrate: [100, 50, 100],
             data: {
                 dateOfArrival: Date.now(),
@@ -79,9 +79,9 @@
             },
             actions: [
                 {action: 'explore', title: 'Go to the site',
-                    icon: '/images/checkmark.png'},
+                    icon: '/pt/images/checkmark.png'},
                 {action: 'close', title: 'Close the notification',
-                    icon: '/images/xmark.png'},
+                    icon: '/pt/images/xmark.png'},
             ]
         };
         e.waitUntil(
