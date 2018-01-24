@@ -126,14 +126,14 @@ let app = (function() {
             subAndEndpoint.style.display = 'block';
 
             let xhttp = new XMLHttpRequest();
-            xhttp.open('POST', '/pt/subscribe?topics[]=product', true);
+            xhttp.open('POST', '/subscribe?topics[]=product', true);
             let blob = new Blob(['{"subs": '+JSON.stringify(subscription)+'}'], {type: 'application/json'});
             xhttp.send(blob);
         } else {
             subAndEndpoint.style.display = 'none';
 
             let xhttp = new XMLHttpRequest();
-            xhttp.open('POST', '/pt/unsubscribe?topics[]=product', true);
+            xhttp.open('POST', '/unsubscribe?topics[]=product', true);
             let blob = new Blob(['{"subs": '+JSON.stringify(subscription)+'}'], {type: 'application/json'});
             xhttp.send(blob);
         }
@@ -174,7 +174,7 @@ let app = (function() {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
         console.log('Service Worker and Push is supported');
 
-        navigator.serviceWorker.register('/pt/javascripts/sw.js')
+        navigator.serviceWorker.register('/javascripts/sw.js')
             .then(function(swReg) {
                 console.log('Service Worker is registered', swReg);
 
