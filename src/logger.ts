@@ -1,23 +1,14 @@
-import * as fs from "fs";
-/**
- * Created by kylewill0725 on 6/26/2017.
- */
-const LOG_LOC = './log.txt';
-const ERROR_LOC = './error.txt';
-var eol = require('os').EOL;
+import * as Winston from 'winston';
 
-export function err(error: string) {
-    error = '------'+ getDateTimeString() +'-----------------' +
-        eol + error + eol +
-        '----------------------------------------------' + eol;
-    fs.appendFileSync(ERROR_LOC, error);
-}
+const level = process.env.LOG_LEVEL || 'debug'; //TODO: Change to debug for production server.
 
-export function log(log: string) {
-    fs.appendFileSync(LOG_LOC, getDateTimeString() + ' ' +log+eol);
-}
-
-function getDateTimeString() {
-    let date = new Date();
-    return date.getUTCFullYear()+'/'+date.getUTCMonth()+'/'+date.getUTCDate()+' '+date.getUTCHours()+':'+date.getUTCMinutes()+':'+date.getSeconds();
-}
+export const logger = new Winston.Logger({
+    transports: [
+        new Winston.transports.Console({
+            level: level,
+            timestamp: function () {
+                return (new Date()).toISOString();
+            }
+        })
+    ]
+});

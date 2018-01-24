@@ -4,8 +4,7 @@
 import * as request from 'request'
 import * as xpath from 'xpath';
 import {DOMParser} from 'xmldom';
-import * as logger from './logger';
-var eol = require('os').EOL;
+import {logger} from './logger';
 
 export enum Stores {
     NEWEGG,
@@ -33,7 +32,7 @@ export abstract class Product {
         try {
             type = Stores.get(domain);
         } catch (e) {
-            logger.err(e);
+            logger.error(e);
             return;
         }
         switch (type) {
@@ -58,7 +57,7 @@ export class NeweggProduct extends Product {
     set canAddToCart(value: boolean) {
         if (value != this._canAddToCart) {
             this._canAddToCart = value;
-            logger.log((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
+            logger.info((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
             this.callback(this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name,
                 this.url);
         }
@@ -71,7 +70,7 @@ export class NeweggProduct extends Product {
     set inStock(value: boolean) {
         if (value != this._inStock) {
             this._inStock = value;
-            logger.log((this.inStock ? 'In stock: ' + this.name : 'Out of stock: ' + this.name));
+            logger.info((this.inStock ? 'In stock: ' + this.name : 'Out of stock: ' + this.name));
             this.callback(this.inStock ? 'In stock: ' + this.name : 'Out of stock: ' + this.name,
                 this.url);
         }
@@ -114,10 +113,10 @@ export class NeweggProduct extends Product {
                 return;
             } else if (err.code == 'ETIMEDOUT') {
                 console.log("No connection.");
-                logger.err(err);
+                logger.error(err);
                 return;
             } else if (err) {
-                logger.err(err);
+                logger.error(err);
                 return;
             }
             if (productInfo == null) return;
@@ -137,7 +136,7 @@ export class SuperBiizProduct extends Product {
     set canAddToCart(value: boolean) {
         if (value != this._canAddToCart) {
             this._canAddToCart = value;
-            logger.log((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
+            logger.info((this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name));
             this.callback(this.canAddToCart ? 'Can add: ' + this.name : 'Can\'t add: ' + this.name,
                 this.url);
         }
@@ -171,7 +170,7 @@ export class SuperBiizProduct extends Product {
                 let cls = input.attributes.getNamedItem('class');
                 this.canAddToCart = !(typeof cls !== 'undefined' && cls.value.includes('not_in_stock'));
             } catch (e) {
-                logger.err(e);
+                logger.error(e);
             }
         });
     }
@@ -193,7 +192,7 @@ function callJSONRequest(options, onResult) {
         let json = JSON.parse(body);
         onResult(0, json);
         } catch (err) {
-            logger.err(err);
+            logger.error(err);
         }
     });
 }

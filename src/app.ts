@@ -6,7 +6,7 @@ import * as request from 'request'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as favicon from 'serve-favicon'
-import * as logger from 'morgan'
+import * as morgan from 'morgan'
 import * as cookieParser from 'cookie-parser'
 import * as bodyParser from 'body-parser'
 import {SubscriberInstanceManager, Subscriber} from './subscriber';
@@ -14,7 +14,7 @@ import {Product} from "./product";
 const index = require('./routes/index');
 const users = require('./routes/users');
 const keys = require('./keys');
-import * as ptlogger from './logger';
+import {logger} from './logger';
 
 let app = express();
 const SUBSCRIBERS_LOC = './subscribers.json';
@@ -44,7 +44,7 @@ app.set('view engine', 'pug');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
+app.use(morgan('dev')); //TODO: Compare different morgan logging levels.
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
@@ -124,14 +124,14 @@ function sendPushNotification(topic: string, payload) {
             privateKey: keys.vapidPrivateKey
         }
     };
-    console.log("Attempting to send message.");
+    console.debug("Attempting to send message.");
     for (let sub of sim.subscribers.filter(sub => sub.topics.includes(topic))) {
         wp.sendNotification(
             sub.sub,
             JSON.stringify(payload),
             options
-        ).then(() => console.log("Message pushed")).catch((err) => {
-            ptlogger.log(err);
+        ).then(() => console.debug("Message pushed")).catch((err) => {
+            logger.error(err);
             if (err.statusCode == 400 || (err.statusCode == 410 && err.body.includes("No such subscription")))
                 sim.remove(sim.subscribers.filter(sub => sub.sub.endpoint === err.endpoint)[0] as Subscriber);
         });
