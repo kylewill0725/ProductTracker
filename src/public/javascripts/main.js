@@ -191,3 +191,9 @@ let app = (function() {
     }
 
 })();
+
+function testSend() {
+    let xhttp = new XMLHttpRequest();
+    xhttp.open('GET', '/test', true);
+    xhttp.send();
+}
