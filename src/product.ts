@@ -113,10 +113,10 @@ export class NeweggProduct extends Product {
                 return;
             } else if (err.code == 'ETIMEDOUT') {
                 console.log("No connection.");
-                logger.error(err);
+                logger.debug(err);
                 return;
             } else if (err) {
-                logger.error(err);
+                logger.debug(err);
                 return;
             }
             if (productInfo == null) return;
@@ -170,7 +170,7 @@ export class SuperBiizProduct extends Product {
                 let cls = input.attributes.getNamedItem('class');
                 this.canAddToCart = !(typeof cls !== 'undefined' && cls.value.includes('not_in_stock'));
             } catch (e) {
-                logger.error(e);
+                logger.debug(e);
             }
         });
     }
@@ -192,7 +192,7 @@ function callJSONRequest(options, onResult) {
         let json = JSON.parse(body);
         onResult(0, json);
         } catch (err) {
-            logger.error(err);
+            logger.debug(err);
         }
     });
 }

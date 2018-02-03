@@ -9,16 +9,26 @@ import * as favicon from 'serve-favicon'
 import * as morgan from 'morgan'
 import * as cookieParser from 'cookie-parser'
 import * as bodyParser from 'body-parser'
+import {sendNotification, WebPushError} from 'web-push';
 import {SubscriberInstanceManager, Subscriber} from './subscriber';
 import {Product} from "./product";
 const index = require('./routes/index');
 const users = require('./routes/users');
 const keys = require('./keys');
 import {logger} from './logger';
+import {urls, manufacturers, models} from '../urls';
+import {config} from '../config';
+import {IncomingMessage, ServerResponse} from "http";
+import {Request, Response} from "express";
+
+class HttpError implements Error {
+    name: string;
+    status: number;
+    constructor(public message: string){}
+}
 
 let app = express();
 const SUBSCRIBERS_LOC = './subscribers.json';
-const PRODUCTS_LOC = './urls.json';
 
 //region Setup
 let sim = SubscriberInstanceManager.INSTANCE;
@@ -30,10 +40,8 @@ if (fs.existsSync(SUBSCRIBERS_LOC))
 
 //Load Products
 const products: Product[] = [];
-let err, data = fs.readFileSync(PRODUCTS_LOC, 'utf8');
-if (err) throw err;
-for (let val of JSON.parse(data)) {
-    let product = Product.create(val['name'], val['href'], onChangeState);
+for (let url of urls) {
+    let product = Product.create(url['name'], url['href'], onChangeState);
     if (product != null)
         products.push(product);
 }
@@ -54,36 +62,47 @@ app.use('/', index);
 app.use('/users', users);
 app.use('/test', (req, res) => {
     sendPushNotification('test', {title: 'test'});
-    res.end("Success");
+    res.writeHead(302, {Location: 'http://localhost:2000'});
+    res.end();
 });
-app.use('/subscribe', function (req, res) {
+app.use('/subscribe', (req, res) => {
         sim.add(new Subscriber(req.body.subs, req.query.topics));
         sim.add(new Subscriber(req.body.subs, ['test']));
         res.end("Success");
     }
 );
-app.use('/unsubscribe', function (req, res) {
+app.use('/unsubscribe', (req, res) => {
         if (req.body.subs != null) {
-            req.query.topics.forEach(function (topic) {
+            req.query.topics.forEach(function (topic: string) {
                 let i = sim.subscribers.findIndex((subscriber: Subscriber) => subscriber.sub.endpoint == JSON.parse(req.body.subs).endpoint);
                 if (i >= 0) {
-                    sim.removeTopic(sim.subscribers[i], topic);
+                    sim.removeTopic(sim.subscribers[i], [topic]);
                 }
             });
         }
         res.end("Success");
     }
 );
+app.use('/addFilter', (req, res) => {
+    if (Number(req.header('Version')) < config.NETWORK_VERSION) {
 
+    }
+    res.status(400);
+    res.end();
+});
+app.use('/removeFilter', (req, res) => {
+    res.status(400);
+    res.end();
+});
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-    let err = new Error('Not Found');
-    err['status'] = 404;
+    let err = new HttpError('Not Found');
+     err.status = 404;
     next(err);
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use(function (err: HttpError, req: Request, res: Response) {
     // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -106,15 +125,15 @@ app.use(function (err, req, res, next) {
 
 //region Product Monitor Functions
 
-function onChangeState(title: string, url: string) {
+function onChangeState(title: string, url: string, args: any = false) {
+
     sendPushNotification('product', {
         title: title,
         url: url
     });
 }
 
-function sendPushNotification(topic: string, payload) {
-    let wp = require('web-push');
+function sendPushNotification(topic: string, payload: any) {
     let options = {
         TTL: 60,
         gcmAPIKey: keys.gcmKey,
@@ -126,11 +145,11 @@ function sendPushNotification(topic: string, payload) {
     };
     console.debug("Attempting to send message.");
     for (let sub of sim.subscribers.filter(sub => sub.topics.includes(topic))) {
-        wp.sendNotification(
+        sendNotification(
             sub.sub,
             JSON.stringify(payload),
             options
-        ).then(() => console.debug("Message pushed")).catch((err) => {
+        ).then(() => console.debug("Message pushed")).catch((err: WebPushError) => {
             logger.error(err);
             if (err.statusCode == 400 || (err.statusCode == 410 && err.body.includes("No such subscription")))
                 sim.remove(sim.subscribers.filter(sub => sub.sub.endpoint === err.endpoint)[0] as Subscriber);

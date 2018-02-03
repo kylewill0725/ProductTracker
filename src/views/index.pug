@@ -3,6 +3,13 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
+
+  select(id='manufacturer')
+    option AMD
+    option NVidia
+
+  button(id="addFilter") Add Filter
+
   button(class='subscribe') Subscribe
 
   button(onclick='testSend()') Test Send

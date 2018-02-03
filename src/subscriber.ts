@@ -19,17 +19,17 @@ export class SubscriberInstanceManager {
     }
 
     private _subscribers: Subscriber[] = [];
-    get subscribers(): Subscriber[] {
-        return this._subscribers.map(x => Object.assign(new Subscriber, x));
+    private get subscribers(): Subscriber[] {
+        return this._subscribers;
     }
 
     add(subscriber: Subscriber): boolean {
-        let subIndex = this.subscribers.findIndex(val => subscriber.sub.endpoint == val.sub.endpoint);
-        if (subIndex >= 0) {
-            let newTopics = this.subscribers[subIndex].topics.concat(subscriber.topics).filter(val => !this.subscribers[subIndex].topics.includes(val));
+        let existingSub = this.subscribers.filter(val => subscriber.sub.endpoint == val.sub.endpoint)[0];
+        if (existingSub != null) {
+            let newTopics = subscriber.topics.filter(nTopic => existingSub.topics.every(oTopic => oTopic != nTopic));
             if (newTopics.length == 0) return false;
             newTopics.forEach(topic => {
-                this._subscribers[subIndex].topics.push(topic);
+                existingSub.topics.push(topic);
             });
         } else {
             this._subscribers.push(subscriber);
@@ -52,12 +52,11 @@ export class SubscriberInstanceManager {
     }
 
     removeDesc(subscriber: string, topics: string[]): boolean {
-        let i = this.subscribers.findIndex((val, j, ar) => subscriber == val.sub.endpoint);
-        if (i >= 0) {
-            if (this.subscribers[i].topics.length > 1) {
-                this._subscribers[i].topics = this.subscribers[i].topics.filter(val => topics.indexOf(val) == -1);
-            } else {
-                this.remove(this.subscribers[i]);
+        let existingSub = this.subscribers.filter(eSub => subscriber == eSub.sub.endpoint)[0];
+        if (existingSub != null) {
+            existingSub.topics = existingSub.topics.filter(val => topics.indexOf(val) == -1);
+            if (existingSub.topics.length == 0) {
+                this.remove(existingSub);
             }
             this.save(this._location);
             return true;
@@ -80,7 +79,7 @@ export class SubscriberInstanceManager {
     rebuild(location: string) {
         let err, data = fs.readFileSync(location, 'utf8');
         if (err) throw err;
-        this._subscribers = JSON.parse(data).map(val => {
+        this._subscribers = JSON.parse(data, Subscriber.reviver).map(val => {
             return Object.setPrototypeOf(val, Subscriber.prototype)
         });
     }
@@ -91,19 +90,16 @@ export class SubscriberInstanceManager {
 }
 
 export class Subscriber {
-    topics: string[];
-    sub: Subscription;
-
-    constructor(subscription: Subscription = {} as Subscription, topics: string[] = ["product"]) {
-
-        this.topics = topics;
-        this.sub = subscription;
+    constructor(public sub: Subscription = null, public topics: string[] = ["product"]) {
     }
 
     isEqual(subscriber: Subscriber): boolean {
         return typeof subscriber !== 'undefined' && this.sub.endpoint == subscriber.sub.endpoint;
     }
 
+    static reviver(key: string, value: any): any {
+
+    }
 }
 
 export class Subscription {

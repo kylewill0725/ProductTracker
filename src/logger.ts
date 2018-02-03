@@ -5,6 +5,7 @@ const level = process.env.LOG_LEVEL || 'debug'; //TODO: Change to debug for prod
 export const logger = new Winston.Logger({
     transports: [
         new Winston.transports.Console({
+            name: 'console.log',
             level: level,
             timestamp: function () {
                 return (new Date()).toISOString();

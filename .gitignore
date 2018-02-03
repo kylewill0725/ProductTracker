@@ -1,5 +1,7 @@
 /vapid
-/urls.json
+/urls.ts
+/urls.js
+/urls.js.map
 /subscribers.json
 /Server
 /ProductTracker.iml
@@ -20,3 +22,6 @@
 /src/tests/subscriberTest.js
 /src/tests/subscriberTest.js.map
 /test.json
+/config.ts
+/config.js
+/config.js.map
