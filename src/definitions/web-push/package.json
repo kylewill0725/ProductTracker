@@ -1,0 +1,42 @@
+{
+  "_from": "@types/web-push",
+  "_id": "@types/web-push@1.0.0",
+  "_inBundle": false,
+  "_location": "/@types/web-push",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@types/web-push",
+    "name": "@types/web-push",
+    "escapedName": "@types%2fweb-push",
+    "scope": "@types",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_spec": "@types/web-push",
+  "_where": "C:\\Users\\Kyle\\IdeaProjects\\ProductTracker",
+  "bundleDependencies": false,
+  "contributors": [
+  ],
+  "dependencies": {
+    "@types/express": "*"
+  },
+  "deprecated": false,
+  "description": "TypeScript definitions for web-push",
+  "license": "MIT",
+  "main": "",
+  "name": "@types/web-push",
+  "repository": {
+    "type": "git",
+    "url": "https://www.github.com/DefinitelyTyped/DefinitelyTyped.git"
+  },
+  "scripts": {},
+  "typeScriptVersion": "2.6.2",
+  "version": "1.0.0"
+}
